@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import HttpResponse,JsonResponse
 import json
 
 from . import df
@@ -46,12 +46,17 @@ def ladder_range_data(request):
 		"Logged GDP per capita": "gdp"
 	}
 
-	# Convert string parameters to float
-	range_from = float( request.GET.get('from') )
-	range_to = float( request.GET.get('to') )
+	try:
+		# Convert string parameters to float
+		range_from = float( request.GET.get('from') )
+		range_to = float( request.GET.get('to') )
+	except Exception as e:
+		return HttpResponse(
+			"Invalid Argument.`from` and `to` query arguments are required and must be floating numbers."
+		)
 
 	# Filter rows with "Ladder score" between `range_from` and `range_to
-	ladder_range_df = df[df['Ladder score'].round(1).between( range_from, range_to, inclusive=True)]
+	ladder_range_df = df[ (range_from<df['Ladder score'].round(1)) & (df['Ladder score'].round(1)<=range_to)]
 	# Create new column `rank` from dataframes's index
 	# Increment by 1 to start `rank` with 1 instead of 0
 	ladder_range_df.loc[:,"rank"] = ladder_range_df.index+1
